@@ -1,0 +1,6 @@
+﻿{
+  "python.defaultInterpreterPath": "",
+  "python.analysis.autoImportCompletions": true,
+  "jupyter.askForKernelRestart": false,
+  "jupyter.notebookFileRoot": "\"
+}
