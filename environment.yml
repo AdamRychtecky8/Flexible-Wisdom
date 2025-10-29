@@ -1,0 +1,15 @@
+name: flexwisdom
+channels:
+  - defaults
+dependencies:
+  - python=3.11
+  - matplotlib
+  - scikit-learn
+  - pandas
+  - statsmodels
+  - scipy
+  - seaborn
+  - numpy
+  - ipykernel
+  - jupyter
+prefix: C:\Users\AdamR\miniconda3\envs\flexwisdom
