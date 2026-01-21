@@ -16,9 +16,13 @@ __pycache__/
 
 # Data (keep heavy or private data out of Git)
 data/
+data.zip
+archive/
 reports/figures/
 reports/tables/
 
 # Jupyter artifacts
 *.egg-info/
 pip-wheel-metadata/
+exports/
+notebooks/notebooks_text/
