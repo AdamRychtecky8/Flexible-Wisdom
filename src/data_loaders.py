@@ -68,7 +68,7 @@ def load_human_master(data_dir: Path | None = None) -> pd.DataFrame:
 def load_model_master(data_dir: Path | None = None) -> pd.DataFrame:
     """Load and prepare model decision data across all conditions.
 
-    Prefers decisions_fixed/ over decisions/. Filters bad models (0 responses).
+    Uses decisions_fixed/ directory only. Filters bad models (0 responses).
 
     Returns:
         DataFrame with columns: stimID, condition, side_selected, cue_points,
@@ -115,7 +115,10 @@ def load_model_master(data_dir: Path | None = None) -> pd.DataFrame:
         base = data_dir / cond
         decisions_dir = base / "decisions_fixed"
         if not decisions_dir.exists():
-            decisions_dir = base / "decisions"
+            raise FileNotFoundError(
+                f"decisions_fixed directory not found: {decisions_dir}. "
+                "Data analysis should only use decisions_fixed folder."
+            )
 
         for f in sorted(decisions_dir.glob("*.csv")):
             dfs.append(load_decisions(f, cond, f.stem))

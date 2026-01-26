@@ -45,12 +45,12 @@ Flexible-Wisdom/
 │   ├── raw/                           # Main data folder (set via .env DATA_DIR)
 │   │   ├── 50_50/                     # 50% cue validity (hard condition)
 │   │   │   ├── human_data.csv         # 13,000 human trials
-│   │   │   ├── decisions_fixed/       # Model decision files (preferred)
+│   │   │   ├── decisions_fixed/       # Model decision files (REQUIRED for analysis)
 │   │   │   │   ├── gemini-2.5-flash-lite-preview-06-17.csv
 │   │   │   │   ├── gpt-4o.csv
 │   │   │   │   ├── claude-3-5-sonnet.csv
 │   │   │   │   └── ... (12+ model files)
-│   │   │   ├── decisions/             # Alternative decision files (fallback)
+│   │   │   ├── decisions/             # Legacy (unused - DO NOT USE)
 │   │   │   └── angle_estimations/     # Model angle responses (supplementary)
 │   │   │       ├── gemini-2.5-pro.csv
 │   │   │       ├── gpt-4o.csv
