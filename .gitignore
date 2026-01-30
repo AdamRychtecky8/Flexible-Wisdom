@@ -20,6 +20,7 @@ data.zip
 archive/
 reports/figures/
 reports/tables/
+articles/
 
 # Jupyter artifacts
 *.egg-info/
