@@ -12,6 +12,7 @@ __pycache__/
 .venv/
 .env
 .env.*
+!.env.example
 .ipynb_checkpoints/
 
 # Data (keep heavy or private data out of Git)
