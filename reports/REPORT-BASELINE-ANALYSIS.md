@@ -1,7 +1,7 @@
 # Report: Baseline Analysis of Human-LLM Collective Decision-Making
 
 **Date:** January 2026  
-**Dataset Size:** 39,600 human trials + 468,000+ LLM trials  
+**Dataset Size:** 36,000 human trials + 36,000 LLM trials  
 **Audience:** Thesis advisor  
 **Purpose:** Demonstrate dataset mastery and position future research on correlation blindness in AI aggregation
 
@@ -11,7 +11,7 @@
 
 This report summarizes our comprehensive baseline analysis of human and large language model (LLM) decision-making on a challenging 2-alternative-forced-choice (2AFC) target-detection task with spatial cues. Our analysis spans three difficulty conditions (50%, 80%, and 100% cue validity) across 12 humans and 12+ AI models, yielding three main contributions:
 
-1. **Characterization of baseline performance:** Humans achieve 47–87% accuracy with large individual differences (SD = 0.11); LLMs show even greater heterogeneity (SD = 0.14)
+1. **Characterization of baseline performance:** Humans achieve 47–87% accuracy with large individual differences (SD = 0.11, pooled across conditions); LLMs show even greater heterogeneity (SD = 0.14, pooled across conditions)
 2. **Demonstration of ensemble benefits:** Collective voting improves accuracy by 8–15% over single agents, with weighted aggregation adding 3–5% improvement
 3. **Identification of correlation as a limiting factor:** Model error patterns show significant clustering, suggesting redundancy in the ensemble that standard aggregation methods fail to exploit
 
@@ -40,10 +40,10 @@ Most ensemble literature assumes or enforces agent *independence*. Yet in practi
 
 ### Our Study
 
-We built a controlled task environment where:
-1. We can measure agent errors precisely (ground truth available)
-2. We can compute agent-pair correlations explicitly (using output decision files)
-3. We can test whether LLMs implicitly account for correlation (via prompting experiments)
+This study analyzes a controlled task environment (dataset provided by a graduate student collaborator) where:
+1. Agent errors can be measured precisely (ground truth available)
+2. Agent-pair correlations can be computed explicitly (using output decision files)
+3. Whether LLMs implicitly account for correlation can be tested (via prompting experiments)
 
 The present report establishes the baseline; next sections propose a focused study on **correlation blindness**.
 
@@ -55,9 +55,9 @@ The present report establishes the baseline; next sections propose a focused stu
 
 | Component | Details |
 |-----------|---------|
-| **Humans** | 12 participants, 1,000 trials per condition, 3 conditions → 3,000 trials/person |
-| **LLMs** | 12+ models (Gemini, GPT-4o, Claude variants), 13,000 trials per condition |
-| **Total** | 39,600 human trials + 468,000+ model trials = 507,600 total data points |
+| **Humans** | 12 participants (1 excluded for data quality prior to analysis), 1,000 trials per participant per condition, 3 conditions → 3,000 trials/person |
+| **LLMs** | 12 models (Gemini, GPT-4o, Claude variants; 1 model excluded for 0 valid responses), 1,000 trials per model per condition → 3,000 trials/model |
+| **Total** | 36,000 human trials + 36,000 LLM trials = 72,000 total data points |
 
 ### Task Design: 2AFC Target-Detection with Spatial Cue
 
@@ -155,11 +155,14 @@ In the **100_0 condition (easiest task):**
 
 **Error Correlation Patterns:**
 
-When we analyze which models make errors on the same trials:
+When we analyze which models make errors on the same trials (Pearson r on binary error vectors, 66 unique pairs):
 
-- **Correlated pairs** (error correlation > 0.5): 35–40% of model pairs
-- **Independent pairs** (error correlation 0.2–0.5): 45–50% of model pairs
-- **Negatively correlated** (error correlation < 0.2): 10–15% of model pairs
+- **Strong positive** (r > 0.5): ~4.5% of model pairs (3 of 66)
+- **Weak-to-moderate positive** (0.2 < r ≤ 0.5): ~62% of model pairs (41 of 66)
+- **Near-independent** (|r| ≤ 0.2): ~33% of model pairs (22 of 66)
+- **Negative** (r < −0.2): 0% of model pairs
+
+Correlation values range from r = −0.02 to r = 0.61 (mean r = 0.29).
 
 **Implication:**  
 The ensemble includes significant redundancy. For example:
@@ -234,7 +237,7 @@ When multiple agents are **correlated** (make similar mistakes on similar trials
 ### Budget Allocation (~$700 total; $200–300 for correlation blindness study)
 
 **Phase 1: Baseline Analysis (Complete)** — $0 (used local compute & existing APIs)
-- Processed 507,600 trial dataset
+- Processed 72,000-trial dataset
 - Computed SDT metrics & aggregation strategies
 - Identified model correlation as key variable
 
@@ -262,7 +265,7 @@ When multiple agents are **correlated** (make similar mistakes on similar trials
 
 ### Infrastructure Already in Place
 
-✓ **Data:** 507,600 trials ready; already processed and cleaned  
+✓ **Data:** 72,000 trials ready; already processed and cleaned  
 ✓ **Code:** Modular analysis pipeline; can easily add LLM prompting layer  
 ✓ **Benchmarks:** Bayesian Ideal Observer implemented; human baselines measured  
 ✓ **Git tracking:** All work logged on migration branch with clear commit history  
@@ -274,7 +277,7 @@ When multiple agents are **correlated** (make similar mistakes on similar trials
 
 ### What We've Built
 
-1. **Rigorous data collection:** 507,600 trials across humans, 12 LLM variants, 3 difficulty conditions
+1. **Analysis of provided dataset:** 72,000 trials (dataset provided by a graduate student collaborator) across humans and 12 LLM variants, 3 difficulty conditions
 2. **Methodological sophistication:** Signal detection theory, bootstrap resampling (n=500), 10-fold cross-validation
 3. **Modular code architecture:** Centralized data loaders, linear notebook pipeline, no data duplication
 4. **Reproducible analysis:** Environment variables (.env), version-controlled outputs, clear run instructions
@@ -306,7 +309,7 @@ This problem naturally emerged from our data:
 
 ### Summary
 
-This baseline analysis of 507,600 trials demonstrates that:
+This baseline analysis of 72,000 trials demonstrates that:
 
 1. ✅ **Dataset is rich and rigorous:** Humans + 12+ LLMs, 3 conditions, ground truth labels
 2. ✅ **We understand baseline performance:** 47–87% human accuracy, 48–85% LLM accuracy
@@ -365,7 +368,7 @@ cp .env.example .env
 jupyter notebook notebooks/Report-Baseline-Analysis.ipynb
 ```
 
-All code is version-controlled on the `migration` branch with clear commit history.
+All code is version-controlled with clear commit history.
 
 ### B. File & Folder Structure
 
@@ -385,10 +388,9 @@ Flexible-Wisdom/
 │   ├── config.py
 │   └── data_loaders.py
 ├── outputs/
-│   ├── individual-differences.csv
-│   ├── majority-voting-bootstrap.csv
-│   ├── wlc-cv-results.csv
-│   └── (plots & visualizations)
+│   ├── majority-voting-bootstrap.csv   ← generated by running notebooks/Main-Analysis.ipynb
+│   ├── wlc-cv-results.csv              ← generated by running notebooks/Main-Analysis.ipynb
+│   └── (PNG and PDF plots already present)
 └── docs/
     ├── QUICKSTART.md
     ├── FOLDER.md

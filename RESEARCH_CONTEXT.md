@@ -8,7 +8,7 @@ The Condorcet Jury Theorem (1785) predicts that majority voting accuracy approac
 
 ## Central Finding
 
-Both human and LLM ensembles plateau well below the Condorcet prediction. In this dataset, ensemble accuracy saturates around n ≈ 7 agents, after which adding more agents contributes only ~1–2% additional gain. The mechanistic explanation — high pairwise error correlation across LLM agents (35–40% of pairs with r > 0.5) — has direct implications for how multi-agent AI systems should be designed and evaluated. An ensemble of 12 highly correlated models provides far less independent evidence than 12 agents, and naive aggregation treats their agreement as 12 independent confirmations rather than a single correlated signal.
+Both human and LLM ensembles plateau well below the Condorcet prediction. In this dataset, ensemble accuracy saturates around n ≈ 7 agents, after which adding more agents contributes only ~1–2% additional gain. The mechanistic explanation — elevated pairwise error correlation across LLM agents (4.5% of pairs with r > 0.5; 62% with weak-to-moderate positive correlation, 0.2 < r ≤ 0.5; no pairs negatively correlated) — has direct implications for how multi-agent AI systems should be designed and evaluated. An ensemble of partially correlated models provides less independent evidence than an equal number of truly independent agents, and naive aggregation treats their agreement as independent confirmation rather than a partially redundant signal.
 
 ## Proposed Phase 2: Correlation Blindness
 
