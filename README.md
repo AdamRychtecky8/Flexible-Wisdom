@@ -1,141 +1,80 @@
 # Ensemble Decision-Making Under Correlation: Humans vs. LLM Groups
 
-**Undergraduate honors thesis research · UCSB Vision & Image Understanding Lab · January 2026**
+Undergraduate honors thesis research began with UCSB Vision and Image Understanding Lab completed privately. Big thanks to Parsa Madinei for providing the dataset and guidance in the initial stages.
 
----
+## What this is
 
-## Research Question
+A controlled comparison of how human groups and large language model groups make collective decisions on the same perceptual task. Twelve people and twelve LLM agents each judged the same two-alternative forced-choice target-detection problem under three difficulty levels, 72,000 decisions in total, with known ground truth on every trial. The dataset was provided by a graduate student collaborator. The analysis here is my own.
 
-How do human and large language model ensembles compare in collective decision accuracy on a controlled perceptual task — and why do ensemble gains plateau far earlier than the Condorcet Jury Theorem predicts? Using a dataset of 72,000 trials across 12 humans and 12 LLMs on identical stimuli, this project measures where majority voting fails, identifies error correlation as the mechanistic explanation, and proposes a follow-up study testing whether LLMs can detect and compensate for redundancy in correlated agent groups.
+## The finding
 
----
+On an identical task, LLM groups substantially outperform human groups and come within a few points of the Bayesian optimal observer, while human groups stay well below it. Combining more agents helps, but the gains saturate early, by around five agents, for both humans and LLMs. The reason is that agent errors are positively correlated. Agents tend to fail on the same trials, so each added agent contributes less than an independent vote. Treating correlated agreement as if it were independent is the assumption behind the Condorcet Jury Theorem, and behind much of how multi-agent and mixture-of-experts systems are built.
 
-## Why This Matters for Intelligent Systems
+## Why it matters for AI systems
 
-Most deployed ensemble and multi-agent AI systems assume that combining more agents always helps — an assumption grounded in the Condorcet Jury Theorem, which predicts accuracy approaching 100% as group size grows, *under the assumption of agent independence*. This research shows that assumption is violated in practice: most LLM pairs in this dataset show weak-to-moderate positive error correlation (0.2 < r ≤ 0.5, 62% of pairs), with a smaller fraction showing strong positive correlation (r > 0.5, 4.5% of pairs), meaning they partially share failure modes and provide less-than-independent evidence. This correlation structure — not accuracy heterogeneity — is what causes ensemble gains to saturate at group sizes far smaller than theory predicts. The findings have direct implications for mixture-of-experts architectures, AI committee systems, and human-AI teaming, where naive aggregation can produce false confidence in redundant agreement.
+Most ensemble and multi-agent designs assume that adding agents adds independent evidence. This dataset shows that assumption breaking on a clean, controlled task with a diverse set of current models. Errors are positively correlated across agents, with a mean pairwise error correlation around 0.29, so a group of twelve provides meaningfully less than twelve independent votes, and naive vote-counting produces false confidence in redundant agreement. The same effect governs LLM committees, mixture-of-experts routing, and human-AI teaming, where the value of an added agent depends on whether its errors are independent of the ones already in the room.
 
----
+## Key results
 
-## Key Findings
+Every figure here is computed from the data and recorded with its source in `reports/VERIFIED_NUMBERS.md`.
 
-- **Ensemble voting improves accuracy by 8–15%** over single agents (groups of 12 vs. individuals), depending on task difficulty — consistent with Condorcet predictions at small group sizes
-- **Gains plateau sharply at n ≈ 7**: adding agents 8–12 contributes only ~1–2% additional improvement, well below the theoretical curve
-- **Weighted Linear Combination (WLC) beats majority voting by +3.3%** (mean accuracy 0.748 vs. 0.724) with lower variance (SD 0.015 vs. 0.018), using 10-fold cross-validation
-- **4.5% of LLM pairs show strong positive error correlation (r > 0.5)**; 62% show weak-to-moderate positive correlation (0.2 < r ≤ 0.5); 33% are near-independent (|r| ≤ 0.2); no pairs are negatively correlated — the ensemble has moderate redundancy
-- **Humans: 47–87% accuracy across conditions** (d′ = 0.35 → 1.02); **LLMs: 48–85%** (d′ = 0.17 → 1.18) — LLMs match or slightly exceed average human performance but with greater heterogeneity (SD 0.08–0.12 vs. 0.06–0.10)
-- **Both human and LLM groups underperform the Bayesian Ideal Observer** (BIO ceiling: 85% in the easiest condition; human group: 81%; LLM group: 79%) — indicating room for better aggregation strategies
-- **Error correlation explains the plateau**: WLC's +3.3% gain over majority voting traces to the same heterogeneity that the correlation analysis reveals — the learned weights implicitly track which agents are redundant
+- LLM agents beat humans at the individual level in every condition: roughly 0.75 to 0.80 accuracy versus 0.58 to 0.66, with discriminability (d-prime) about two to three times higher.
+- At the full twelve-agent ensemble, LLM groups reach 0.835 to 0.884 across conditions. Human groups reach 0.637 to 0.784.
+- The Bayesian ideal observer ceiling is 0.886 to 0.920. LLM ensembles land within 3 to 5 points of it. Human ensembles sit 13 to 25 points below.
+- Ensemble gains saturate early. The accuracy added per extra agent drops below one point by around five agents, with no sharp cutoff, for both groups.
+- Agent errors are weakly to moderately positively correlated. Strong pairwise correlation (r above 0.5) appears in 8 to 14 percent of model pairs depending on condition. No pairs are negatively correlated.
 
----
+## The result in one figure
 
-## What Makes This Unusual
+![Ensemble accuracy versus group size for human and LLM groups across the three difficulty conditions. The dashed line is the Bayesian ideal observer ceiling. LLM ensembles approach the ceiling while human ensembles fall short, and gains saturate by around five agents.](outputs/headline-ensemble-vs-optimal.png)
 
-**72,000 trials across humans and LLMs on identical stimuli** — not a benchmark comparison but a controlled experiment where every agent sees the same perceptual problem under the same difficulty conditions. The analysis goes beyond accuracy to Signal Detection Theory metrics (d′, criterion, hit/false-alarm decomposition), giving a richer account of *how* agents succeed and fail, not just how often. The mechanistic focus on error correlation as the limiting factor is underexplored in the ensemble literature, which typically assumes or enforces independence. The proposed Phase 2 study (Correlation Blindness) directly tests a behavioral hypothesis about LLM meta-cognition: when explicitly told that agents are correlated, do LLMs discount redundant votes — or do they treat 10 correlated "yes" votes as 10 independent confirmations?
+For the full analysis, methods, and discussion, see the report: [reports/REPORT.pdf](reports/REPORT.pdf).
 
----
+## Task and method
 
-## Repository Structure
+**Task.** Two-alternative forced-choice target detection with a spatial cue. Each agent reports whether a target is present. Cue validity sets difficulty: 50 percent (uninformative), 80 percent, and 100 percent. 1,000 trials per agent per condition.
+
+**Agents.** Twelve human participants and twelve LLM agents spanning current GPT, Claude, Gemini, and o-series models. gemini-2.5-pro appears under two readout methods: one that estimated the stimulus angle and mapped it to a decision (`gemini-2.5-pro-angle`), and one that returned the decision directly (`gemini-2.5-pro-decision`). Their elevated mutual correlation is expected, since they share an underlying model.
+
+**Analysis.**
+- Majority voting with bootstrap resampling, 500 samples, group sizes 1 to 12.
+- Signal Detection Theory: d-prime, criterion, hit and false-alarm rates, with log-linear correction for extreme rates.
+- Pairwise error correlation across all agent pairs.
+- Bayesian Ideal Observer computed from the true stimulus distributions, as the optimal ceiling.
+
+## Repository
 
 ```
-├── notebooks/                         # Analysis pipeline (run in order)
-│   ├── Data-Preparation.ipynb         # [1] Load & validate 72,000-trial dataset (~2 min)
-│   ├── Main-Analysis.ipynb            # [2] Majority voting bootstrap, WLC, SDT metrics (~5 min)
-│   ├── Individual-Differences.ipynb   # [3] Per-participant/model performance & outliers (~2 min)
-│   ├── Model-Comparison.ipynb         # [4] Pairwise error correlation & model agreement (~2 min)
-│   └── Appendix-BIO-Analysis.ipynb    # [5] Bayesian Ideal Observer benchmark (optional)
-│
-├── reports/
-│   ├── REPORT-BASELINE-ANALYSIS.md    # ← Full written report (10 sections, ~10 pages)
-│   └── Report-Baseline-Analysis.ipynb # Interactive version of the same report
-│
-├── src/
-│   ├── config.py                      # Path management & .env parsing
-│   └── data_loaders.py                # Centralized loaders: load_human_master(),
-│                                      #   load_model_master(), load_bio_master()
-│
-├── outputs/                           # Generated figures and CSVs
-│   ├── baseline_ensemble_gains.png    # Accuracy vs. group size (majority voting)
-│   ├── baseline_error_correlation.png # Pairwise error correlation matrix
-│   ├── baseline_individual_performance.png
-│   ├── baseline_weighted_aggregation.png
-│   ├── model-accuracy-ranking.pdf     # Model performance bar chart (publication quality)
-│   ├── model-agreement-heatmap.pdf    # Pairwise model agreement
-│   ├── model-error-correlation.pdf    # Error correlation heatmap
-│   └── model-condition-performance.pdf
-│
-├── docs/
-│   ├── QUICKSTART.md                  # Setup and execution walkthrough
-│   ├── PROJECT_OVERVIEW.md            # Research context and task description
-│   └── FUTURE_DIRECTIONS.md          # Research trajectory and next directions
-│
-├── RESEARCH_CONTEXT.md                # Theoretical framing and literature context
-├── environment.yml                    # Conda environment (Python 3.11 + dependencies)
-└── data/raw/                          # Raw dataset (git-ignored, private)
-    ├── 50_50/                         # Hard condition: cue validity = 50%
-    ├── 80_20/                         # Medium condition: cue validity = 80%
-    └── 100_0/                         # Easy condition: cue validity = 100%
+notebooks/      Analysis pipeline, run in order:
+                Data-Preparation, Main-Analysis, Individual-Differences,
+                Model-Comparison, Appendix-BIO-Analysis
+src/            config.py, data_loaders.py, bio.py (Bayesian ideal observer)
+outputs/        Generated figures and CSVs
+reports/        REPORT.qmd            full report (Quarto source)
+                REPORT.pdf            full report (rendered)
+                VERIFIED_NUMBERS.md   every figure traced to its source
+data/           Raw dataset (private, not tracked)
 ```
 
----
+`reports/VERIFIED_NUMBERS.md` traces every number in this README back to the notebook or output file that produced it.
 
-## Report
-
-**[`reports/REPORT-BASELINE-ANALYSIS.md`](reports/REPORT-BASELINE-ANALYSIS.md)** — Full baseline analysis report (~10 pages). Covers dataset composition, individual and group performance tables, SDT metrics, WLC cross-validation results, pairwise error correlation analysis, the correlation blindness hypothesis, and proposed follow-up study design. Written for advisor review and as a thesis chapter draft.
-
-The baseline report includes a full Phase 2 study design: 3 agent compositions × 2 transparency conditions (blind vs. correlation-disclosed) × 3 LLMs (GPT-4o, Claude-3.7-Sonnet, Gemini-2.5-Pro) = 1,800 API calls, with power analysis (Cohen's d ≈ 0.4–0.6, n=300 trials per condition) and pre-registered outcome scenarios.
-
----
-
-## Methods Overview
-
-**Task:** 2-alternative forced-choice (2AFC) target-detection with spatial cues. Agents report whether a target is present or absent; cue validity varies by condition (50%, 80%, 100%) to manipulate task difficulty.
-
-**Aggregation methods:**
-- Majority voting with bootstrap resampling (500 samples, group sizes 1–12)
-- Weighted Linear Combination (WLC) optimized via 10-fold cross-validation
-- Bayesian Ideal Observer (BIO) computed from angle estimation data as theoretical upper bound
-
-**Statistical framework:**
-- Signal Detection Theory: d′ (discriminability), criterion (response bias), hit rate, false alarm rate — with log-linear correction for extreme rates
-- Pairwise error correlation: Pearson correlation on binary error vectors across all model pairs
-- Bootstrap confidence intervals throughout
-
-**Data pipeline:** `Data-Preparation.ipynb` → `Main-Analysis.ipynb` → `Individual-Differences.ipynb` → `Model-Comparison.ipynb` → (optional) `Appendix-BIO-Analysis.ipynb`. All notebooks import from `src/data_loaders.py` — single source of truth for data loading.
-
----
-
-## Reproducibility
+## Reproduce
 
 ```bash
-# 1. Create environment
 conda env create -f environment.yml
 conda activate flexwisdom
+cp .env.example .env          # set DATA_DIR to the data path
 
-# 2. Configure data path
-cp .env.example .env
-# Edit .env: set DATA_DIR=/path/to/data/raw
-
-# 3. Verify setup
-python -c "from src.config import get_paths; get_paths()"
-
-# 4. Run notebooks in order
-# notebooks/Data-Preparation.ipynb → Main-Analysis.ipynb → ...
+# run the notebooks in the order listed above, then render the report
+quarto render reports/REPORT.qmd --to pdf
 ```
-
-See [`docs/QUICKSTART.md`](docs/QUICKSTART.md) for full setup walkthrough.
-
----
-
-## Tech Stack
-
-Python 3.11 · pandas · numpy · scipy · scikit-learn · statsmodels · matplotlib · seaborn · Jupyter · LLM APIs (GPT-4o, Claude, Gemini)
-
----
 
 ## Status
 
-**Phase 1 — Baseline Analysis: Complete (January 2026)**
-Full pipeline implemented; report written; results reproduced and documented.
+**Phase 1, baseline analysis: complete.** Full pipeline, results computed from data and documented.
 
-**Phase 2 — Correlation Blindness Study: Proposed**
-Full experimental design (1,800 LLM API calls across GPT-4o, Claude-3.7-Sonnet, Gemini-2.5-Pro), power analysis, and pre-registered outcome scenarios detailed in [`reports/REPORT-BASELINE-ANALYSIS.md`](reports/REPORT-BASELINE-ANALYSIS.md) §4. Pending advisor approval.
+**Phase 2, correlation blindness: proposed.** A designed but not yet run follow-up testing whether an LLM acting as the aggregator discounts correlated agents, or treats correlated agreement as independent confirmation. Design in the report (`reports/REPORT.pdf`).
+
+## Tech
+
+Python, pandas, numpy, scipy, scikit-learn, statsmodels, matplotlib, seaborn, Jupyter, Quarto.
