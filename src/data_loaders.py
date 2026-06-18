@@ -1,16 +1,17 @@
-"""Consolidated data loaders for human, model, and BIO datasets.
+"""Consolidated data loaders for human and model datasets.
 
 Centralized functions to build master dataframes, avoiding duplication
 across notebooks. All functions return properly formatted DataFrames
 ready for analysis.
+
+BIO (Bayesian Ideal Observer) is NOT loaded here; use src.bio.BayesianIdealObserver
+directly in the Appendix-BIO-Analysis notebook.
 """
 from __future__ import annotations
 
 from pathlib import Path
 
-import numpy as np
 import pandas as pd
-from scipy.stats import norm
 
 from .config import get_paths
 
@@ -65,10 +66,35 @@ def load_human_master(data_dir: Path | None = None) -> pd.DataFrame:
 # ============================================================================
 # MODEL DATA LOADER
 # ============================================================================
+
+# Prefix applied to all CSV filenames in decisions_fixed/ — meaningless artifact.
+_DECISIONS_PREFIX = "0responses_"
+
+
+def _normalize_model_name(raw_stem: str) -> str:
+    """Strip the decisions-file prefix and disambiguate duplicate gemini names.
+
+    decisions_fixed/0responses_gemini-2.5-pro.csv  -> gemini-2.5-pro-decision
+    angle_estimations/gemini-2.5-pro.csv           -> gemini-2.5-pro-angle
+    (handled at call site for the angle file)
+    """
+    name = raw_stem
+    if name.startswith(_DECISIONS_PREFIX):
+        name = name[len(_DECISIONS_PREFIX):]
+    # gemini-2.5-pro in decisions_fixed is the direct-decision variant
+    if name == "gemini-2.5-pro":
+        name = "gemini-2.5-pro-decision"
+    return name
+
+
 def load_model_master(data_dir: Path | None = None) -> pd.DataFrame:
     """Load and prepare model decision data across all conditions.
 
-    Uses decisions_fixed/ directory only. Filters bad models (0 responses).
+    Uses decisions_fixed/ directory only (plus the angle-estimation gemini variant).
+    Filters the model with 0 valid responses. Strips the "0responses_" filename
+    prefix from all model names; disambiguates the two gemini-2.5-pro variants as
+    gemini-2.5-pro-decision (from decisions_fixed) and gemini-2.5-pro-angle (from
+    angle_estimations).
 
     Returns:
         DataFrame with columns: stimID, condition, side_selected, cue_points,
@@ -110,7 +136,6 @@ def load_model_master(data_dir: Path | None = None) -> pd.DataFrame:
             ]
         ]
 
-    # Load model decisions
     for cond in conds:
         base = data_dir / cond
         decisions_dir = base / "decisions_fixed"
@@ -121,9 +146,10 @@ def load_model_master(data_dir: Path | None = None) -> pd.DataFrame:
             )
 
         for f in sorted(decisions_dir.glob("*.csv")):
-            dfs.append(load_decisions(f, cond, f.stem))
+            model_name = _normalize_model_name(f.stem)
+            dfs.append(load_decisions(f, cond, model_name))
 
-        # Load Gemini angle-estimation model
+        # Load Gemini angle-estimation variant (decisions derived from angle estimates)
         def parse_gemini(resp: str) -> tuple:
             a1, a2, dec = [p.strip() for p in str(resp).split(",")]
             return float(a1), float(a2), dec.lower()
@@ -134,7 +160,7 @@ def load_model_master(data_dir: Path | None = None) -> pd.DataFrame:
         )
         g["stimID"] = g["image_id"]
         g["condition"] = cond
-        g["participantID"] = "gemini-2.5-pro"
+        g["participantID"] = "gemini-2.5-pro-angle"
         g["decision"] = g["response"].map({"present": 1, "absent": 0})
         dfs.append(
             g[
@@ -156,131 +182,14 @@ def load_model_master(data_dir: Path | None = None) -> pd.DataFrame:
 
     model_df = pd.concat(dfs, ignore_index=True)
 
-    # Filter bad model (0 responses)
-    bad_model = "0responses_gemini-2.5-flash-lite-preview-06-17"
+    # Exclude the model that returned 0 valid responses
+    bad_model = "gemini-2.5-flash-lite-preview-06-17"
     model_df = model_df[model_df["participantID"] != bad_model]
 
     return model_df
 
 
-# ============================================================================
-# BIO (BAYESIAN IDEAL OBSERVER) DATA LOADER
-# ============================================================================
-def load_bio_master(data_dir: Path | None = None) -> pd.DataFrame:
-    """Load and compute BIO (Bayesian Ideal Observer) metrics.
-
-    Computes signal detection theory metrics (d', criterion, probability of
-    signal present) for each trial based on angle estimation data.
-
-    Returns:
-        DataFrame with BIO metrics: stimID, condition, side_selected, cue_points,
-        line1_angle, line2_angle, valid_cue, TP, participantID, bio_sigma,
-        bio_lambda, bio_llr, bio_p_present, bio_decision, bio_outcome
-    """
-    if data_dir is None:
-        paths = get_paths()
-        data_dir = paths.data_dir
-
-    conds = ["50_50", "80_20", "100_0"]
-    bio_dfs = []
-
-    for cond in conds:
-        base = data_dir / cond
-        g = pd.read_csv(base / "angle_estimations" / "gemini-2.5-pro.csv")
-
-        g["stimID"] = g["image_id"]
-        g["condition"] = cond
-        g["participantID"] = "BIO"
-
-        # Compute BIO metrics
-        bio_metrics = compute_bio_metrics(g)
-        g = pd.concat([g, bio_metrics], axis=1)
-
-        # Binary decision from p_present
-        g["bio_decision"] = (g["bio_p_present"] >= 0.5).astype(int)
-        g["bio_outcome"] = (g["bio_decision"] == g["TP"]).astype(int)
-
-        bio_dfs.append(
-            g[
-                [
-                    "stimID",
-                    "condition",
-                    "side_selected",
-                    "cue_points",
-                    "line1_angle",
-                    "line2_angle",
-                    "valid_cue",
-                    "TP",
-                    "participantID",
-                    "bio_sigma",
-                    "bio_lambda",
-                    "bio_llr",
-                    "bio_p_present",
-                    "bio_decision",
-                    "bio_outcome",
-                ]
-            ]
-        )
-
-    return pd.concat(bio_dfs, ignore_index=True)
-
-
-# ============================================================================
-# HELPER: BIO METRIC COMPUTATION
-# ============================================================================
-def compute_bio_metrics(df: pd.DataFrame) -> pd.DataFrame:
-    """Compute Bayesian Ideal Observer metrics from angle data.
-
-    Internal helper for load_bio_master().
-    """
-    # Angle difference from cue
-    df_work = df.copy()
-    df_work["angle_diff_cue"] = (
-        df_work["line1_angle"] - df_work["line2_angle"]
-    ) * df_work["cue_points"]
-    df_work["angle_diff_noncue"] = (
-        df_work["line1_angle"] - df_work["line2_angle"]
-    ) * (1 - df_work["cue_points"])
-
-    sigma = df_work["angle_diff_cue"].std()
-    lambda_val = df_work["angle_diff_noncue"].std()
-
-    results = []
-
-    for _, row in df_work.iterrows():
-        angle_diff = row["line1_angle"] - row["line2_angle"]
-
-        if pd.isna(angle_diff):
-            bio_sigma = np.nan
-            bio_lambda = np.nan
-            bio_llr = np.nan
-            bio_p_present = np.nan
-        else:
-            bio_sigma = sigma if sigma > 0 else np.nan
-            bio_lambda = lambda_val if lambda_val > 0 else np.nan
-            bio_llr = (
-                (angle_diff**2) / (2 * sigma**2) - (angle_diff**2) / (2 * lambda_val**2)
-                if (sigma > 0 and lambda_val > 0)
-                else np.nan
-            )
-            # Probability of signal present (prior 0.5)
-            bio_p_present = 1 / (1 + np.exp(-bio_llr)) if np.isfinite(bio_llr) else np.nan
-
-        results.append(
-            {
-                "bio_sigma": bio_sigma,
-                "bio_lambda": bio_lambda,
-                "bio_llr": bio_llr,
-                "bio_p_present": bio_p_present,
-            }
-        )
-
-    return pd.DataFrame(results)
-
-
 __all__ = [
     "load_human_master",
     "load_model_master",
-    "load_bio_master",
-    "compute_bio_metrics",
 ]
