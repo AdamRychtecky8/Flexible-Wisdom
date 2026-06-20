@@ -50,7 +50,7 @@ All figures in this report are computed from the data and recorded with their so
 
 ## Individual performance
 
-LLM agents outperform human participants at the individual level in every condition, with roughly two to three times the sensitivity (@tbl-individual). The gap is largest where it matters least, on the easy 100 percent condition, and persists on the uninformative 50 percent condition where the cue carries no information.
+LLM agents outperform human participants at the individual level in every condition, with roughly two to three times the sensitivity (@tbl-individual). The gap is largest where it matters least, on the easy 100 percent condition, and persists on the uninformative 50 percent condition where the cue carries no information. The advantage holds across individual agents, not only in the pooled means (@fig-individual).
 
 | Condition (cue validity) | Group | Mean accuracy | SD | Mean d-prime |
 |---|---|---|---|---|
@@ -63,11 +63,15 @@ LLM agents outperform human participants at the individual level in every condit
 
 : Individual agent performance by condition, pooled within each population. {#tbl-individual}
 
+![Individual agent accuracy by condition for human participants and LLM agents. Each point is one agent. The LLM advantage holds across individual agents and across difficulty levels, not only in the pooled means.](../outputs/individual-accuracy-spread.png){#fig-individual width=100%}
+
 ## Ensemble performance and saturation
 
-Pooling agents helps both populations, but the gains arrive early and then flatten (@fig-headline). Measured as accuracy added per extra agent, the marginal benefit falls below one percentage point by around five agents in every condition, for both humans and LLMs. There is no sharp cutoff; the curve simply bends. The full twelve-agent group is not meaningfully better than a group of five or seven.
+Pooling agents helps both populations, but the gains arrive early and then flatten (@fig-headline). Measured as accuracy added per extra agent, the marginal benefit falls below one percentage point by around five agents in every condition, for both humans and LLMs. There is no sharp cutoff; the curve simply bends. The full twelve-agent group is not meaningfully better than a group of five or seven. Removing the correlation between agents while holding each agent's accuracy fixed raises the curve: the observed ensemble sits below this independence baseline at every group size (@fig-independence), and that shortfall is the practical cost of correlated errors.
 
 ![Ensemble accuracy versus group size for human and LLM groups across the three cue-validity conditions. The dashed line marks the Bayesian ideal observer ceiling for each condition. LLM ensembles approach the ceiling while human ensembles fall short, and the gains for both populations saturate by roughly five agents.](../outputs/headline-ensemble-vs-optimal.png){#fig-headline width=100%}
+
+![Observed LLM ensemble accuracy (solid) versus an independence baseline (dashed) by group size, across the three conditions. The independence baseline applies the identical majority-vote procedure after independently permuting each agent's per-trial correctness, which preserves every agent's accuracy but removes the correlation between agents' errors. The observed curve sits below the independence baseline, and the shortfall is the practical cost of correlated errors. This comparison is descriptive and does not attribute the entire gap to correlation alone.](../outputs/ensemble-vs-independence.png){#fig-independence width=100%}
 
 ## Distance from the optimal observer
 
@@ -83,7 +87,9 @@ The more striking result is where each population lands relative to the optimum 
 
 ## Error correlation
 
-The early saturation has a mechanism. Agent errors are positively correlated: agents tend to fail on the same trials (@tbl-corr). Across conditions, the mean pairwise error correlation is about 0.29, most pairs fall in the weak-to-moderate range, and no pairs are negatively correlated. Strong correlation (r above 0.5) is present but uncommon, in 8 to 14 percent of pairs depending on condition. Positive correlation of this size is enough to make a group of twelve worth less than twelve independent votes, which is consistent with the saturation seen above, although this report does not formally decompose the effective sample size.
+The early saturation has a mechanism. Agent errors are positively correlated: agents tend to fail on the same trials (@tbl-corr). The structure is visible directly in @fig-correlation: most pairs sit in the weak-to-moderate range, none are negative, and the strongest pair is the two readout methods of the same Gemini model. Across conditions, the mean pairwise error correlation is about 0.29, most pairs fall in the weak-to-moderate range, and no pairs are negatively correlated. Strong correlation (r above 0.5) is present but uncommon, in 8 to 14 percent of pairs depending on condition. Positive correlation of this size is enough to make a group of twelve worth less than twelve independent votes, which is consistent with the saturation seen above, although this report does not formally decompose the effective sample size.
+
+![Pairwise error correlation across the twelve LLM agents, 80 percent cue-validity condition. The pattern is similar across conditions. Most pairs are weakly to moderately positively correlated, none are negative, and the most correlated cell is the two readout methods of the same Gemini model. This correlation structure is why ensemble gains saturate early.](../outputs/error-correlation-heatmap.png){#fig-correlation width=100%}
 
 | Error-correlation band | 50 percent | 80 percent | 100 percent |
 |---|---|---|---|
